@@ -1,0 +1,917 @@
+<!DOCTYPE html>
+<meta charset="UTF-8">
+<html>
+<head>
+	<title>Cadastro de Jogadores</title>
+	<style>
+		body {
+		  font-family: Arial, sans-serif;
+		  background-color: #f2f2f2;
+		  margin: 0;
+		  padding: 0;
+		}
+
+		.container {
+		  margin: 0 auto;
+		  padding: 20px;
+		  background-color: #fff;
+		  box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+		  border-radius: 5px;
+		}
+
+		h1 {
+		  text-align: center;
+		  margin-bottom: 40px;
+		  font-size: 32px;
+		}
+
+		form {
+		  display: flex;
+		  flex-wrap: wrap;
+		  margin-bottom: 20px;
+		  justify-content: center;
+		}
+
+		label {
+		  flex: 1;
+		  margin-right: 20px;
+		  font-size: 18px;
+		}
+
+		input[type="text"],
+		input[type="number"] {
+		  flex: 2;
+		  padding: 10px;
+		  border-radius: 5px;
+		  border: none;
+		  margin-bottom: 20px;
+		  font-size: 18px;
+		  background-color: #f2f2f2;
+		}
+
+		input[type="submit"] {
+		  background-color: #4CAF50;
+		  color: #fff;
+		  border: none;
+		  padding: 10px 20px;
+		  border-radius: 5px;
+		  cursor: pointer;
+		  margin: 0 auto;
+		  display: block;
+		  width: 100%;
+		}
+
+		h2 {
+		  margin-bottom: 20px;
+		  font-size: 24px;
+		}
+
+		ul {
+		  list-style: none;
+		  margin: 0;
+		  padding: 0;
+		}
+
+		li {
+		  padding: 10px 20px;
+		  border-bottom: 1px solid #ddd;
+		  display: flex;
+		  align-items: center;
+		  justify-content: space-between;
+		  font-size: 18px;
+		}
+
+		button {
+		  background-color: #f44336;
+		  color: #fff;
+		  border: none;
+		  padding: 10px 20px;
+		  border-radius: 5px;
+		  cursor: pointer;
+		  margin-left: 20px;
+		}
+
+		button:hover {
+		  background-color: #ff6666;
+		}
+
+		table {
+		  width: 100%;
+		  border-collapse: collapse;
+		  margin-bottom: 1rem;
+		}
+
+		th,
+		td {
+		  padding: 0.5rem;
+		  text-align: left;
+		  border: 1px solid #ddd;
+		}
+
+		th {
+		  background-color: #f2f2f2;
+		  font-weight: bold;
+		  font-size: 18px;
+		}
+
+		tr:nth-child(even) {
+		  background-color: #f2f2f2;
+		}
+
+		@media only screen and (max-width: 600px) {
+		  th,
+		  td {
+			text-align: center;
+			font-size: 16px;
+		  }
+
+		  td:before {
+			content: attr(data-label);
+			float: left;
+			font-weight: bold;
+			margin-right: 0.5rem;
+			font-size: 16px;
+		  }
+		}
+
+
+	</style>
+</head>
+<body>
+	<div class="container">
+		<h1>Cadastro de Jogadores</h1>
+		<form id="form-cadastro">
+			<label for="nome">Nome:</label>
+			<input type="text" id="nome" required>
+
+			<label for="nivel">Nível:</label>
+			<input type="number" id="nivel" min="0" max="10" required>
+
+			<button type="submit">Cadastrar</button>
+		</form>
+		<button onclick="gerarTimes()">Gerar Times</button>
+		<h2>Times</h2>
+		<ul id="lista-times"></ul>
+		<h2>Fila de Espera</h2>
+		<ul id="lista-fila"></ul>
+		<h2>Jogadores Cadastrados<button onclick="adicionarTodos()">Adicionar Todos à Fila</button></h2>
+		<button onclick="CaregarMock()">Carregar Mock</button>
+		<ul id="lista-jogadores"></ul>
+		
+		
+	</div>
+
+
+	<script>
+		// Adiciona evento de submit ao formulário
+		document.getElementById('form-cadastro').addEventListener('submit', function(event) {
+			event.preventDefault();
+
+			// Obtém dados do formulário
+			var nome = document.getElementById('nome').value;
+			var nivel = document.getElementById('nivel').value;
+
+			// Armazena jogador no localStorage
+			var jogador = { nome: nome, nivel: nivel };
+			var jogadores = JSON.parse(localStorage.getItem('jogadores')) || [];
+			jogadores.push(jogador);
+			localStorage.setItem('jogadores', JSON.stringify(jogadores));
+
+			// Limpa campos do formulário
+			document.getElementById('nome').value = '';
+			document.getElementById('nivel').value = '';
+
+			// Atualiza lista de jogadores cadastrados
+			atualizarListaJogadores();
+		});
+		
+		function removerJogador(nome) {
+		  // Obtém jogadores do Local Storage
+		  var jogadores = JSON.parse(localStorage.getItem('jogadores')) || [];
+
+		  // Procura pelo jogador a ser removido
+		  for (var i = 0; i < jogadores.length; i++) {
+			if (jogadores[i].nome === nome) {
+			  // Remove jogador do array de jogadores
+			  jogadores.splice(i, 1);
+
+			  // Salva o novo array de jogadores no Local Storage
+			  localStorage.setItem('jogadores', JSON.stringify(jogadores));
+
+			  // Atualiza lista de jogadores cadastrados
+			  atualizarListaJogadores();
+
+			  // Sai do loop de procura
+			  break;
+			}
+		  }
+			// Atualiza lista de jogadores cadastrados
+			atualizarListaJogadores();
+		}
+
+		// Função para atualizar a lista de jogadores cadastrados
+		function atualizarListaJogadores() {
+		  var listaJogadores = document.getElementById('lista-jogadores');
+		  listaJogadores.innerHTML = '';
+
+		  var jogadores = JSON.parse(localStorage.getItem('jogadores')) || [];
+		  jogadores.forEach(function(jogador) {
+			var li = document.createElement('li');
+			li.innerHTML = jogador.nome + ' - ' + jogador.nivel;
+
+			var botaoRemover = document.createElement('button');
+			botaoRemover.innerHTML = 'Remover';
+			botaoRemover.onclick = function() {
+			  removerJogador(jogador.nome);
+			};
+			li.appendChild(botaoRemover);
+
+			var botaoEntrarFila = document.createElement('button');
+			botaoEntrarFila.innerHTML = 'Entrar na fila';
+			botaoEntrarFila.onclick = function() {
+			  adicionarAFila(jogador);
+			};
+			li.appendChild(botaoEntrarFila);
+
+			listaJogadores.appendChild(li);
+
+		  });
+		}
+		
+		function adicionarAFila(jogador) {
+		  // Verifica se o jogador já está na fila
+		  var fila = JSON.parse(localStorage.getItem('fila')) || [];
+		  for (var i = 0; i < fila.length; i++) {
+			if (fila[i].nome === jogador.nome) {
+			  alert('O jogador ' + jogador.nome + ' já está na fila.');
+			  return;
+			}
+		  }
+		  // Adiciona jogador na fila
+		  fila.push(jogador);
+		  localStorage.setItem('fila', JSON.stringify(fila));
+		  atualizarFilaEspera();
+		}
+		
+		function voltaPraFila(idDaTabela){
+		console.log(idDaTabela);
+
+		// Verifica se o jogador já está na fila
+		  var fila = JSON.parse(localStorage.getItem('fila')) || [];
+		  var jogadores = JSON.parse(localStorage.getItem('jogadores')) || [];
+		  var table = document.getElementById(idDaTabela); // encontra a tabela pelo ID
+
+			if (table) {
+			  var trs = table.querySelectorAll("tr"); // seleciona todas as trs da tabela
+			  
+			  for (var i = 2; i < trs.length; i++) {
+				var tds = trs[i].querySelectorAll("td"); // seleciona todas as tds da tr
+				var firstTd = tds[0]; // acessa a primeira td
+				if (firstTd) {
+
+					 for (var j = 0; j < jogadores.length; j++) {
+					  
+						if (firstTd.textContent === jogadores[j].nome && procuraNaFila(firstTd.textContent)) {
+						  fila.push(jogadores[j]);
+						  localStorage.setItem('fila', JSON.stringify(fila));
+						  atualizarFilaEspera();					  				  
+						
+						}
+								
+									
+					  } 
+					 
+				}
+			  }
+			 table.remove();	 
+			}
+		  	
+		}
+		
+		function procuraNaFila(nome){
+		var fila = JSON.parse(localStorage.getItem('fila')) || [];
+			for (var h = 0; h < fila.length; h++) {
+				if (fila[h].nome === nome) {
+				console.log(nome + " ja estava na fila." + fila[h].nome);
+				return false;
+				} 
+					
+			}
+			return true;
+		}
+		
+		function adicionarTodos() {
+		// Verifica se o jogador já está na fila
+		  var jogadores = JSON.parse(localStorage.getItem('jogadores')) || [];
+		  var fila = JSON.parse(localStorage.getItem('fila')) || [];
+		  
+		  jogadores.forEach(function(jogador) {
+		  for (var i = 0; i < fila.length; i++) {
+			if (fila[i].nome === jogador.nome) {
+			  return;
+			}
+		  }
+		  // Adiciona jogador na fila
+		  fila.push(jogador);
+		  localStorage.setItem('fila', JSON.stringify(fila));
+		  atualizarFilaEspera();
+			
+		  });
+		  
+		  
+
+		}
+		
+		function atualizarFilaEspera() {
+		  var listaFila = document.getElementById('lista-fila');
+		  listaFila.innerHTML = '';
+
+		  var fila = JSON.parse(localStorage.getItem('fila')) || [];
+		  fila.forEach(function(jogador) {
+			var li = document.createElement('li');
+			li.innerHTML = jogador.nome;
+
+			var botaoRemover = document.createElement('button');
+			botaoRemover.innerHTML = 'Remover';
+			botaoRemover.onclick = function() {
+			  removerDaFila(jogador);
+			};
+			li.appendChild(botaoRemover);
+
+			listaFila.appendChild(li);
+		  });
+		}
+		function removerDaFila(jogador) {
+		  // Obtém a fila do Local Storage
+		  var fila = JSON.parse(localStorage.getItem('fila')) || [];
+
+		  // Procura pelo jogador na fila
+		  for (var i = 0; i < fila.length; i++) {
+			if (fila[i].nome === jogador.nome) {
+			  // Remove o jogador da fila
+			  fila.splice(i, 1);
+
+			  // Salva a nova fila no Local Storage
+			  localStorage.setItem('fila', JSON.stringify(fila));
+
+			  // Atualiza a lista de jogadores na fila
+			  atualizarFilaEspera();
+
+			  // Sai do loop de procura
+			  break;
+			}
+		  }
+		}
+		function gerarTimes() {
+		  // Obtém jogadores do Local Storage
+		  var jogadores = JSON.parse(localStorage.getItem('fila')) || [];
+
+		  // Verifica se existem pelo menos 12 jogadores cadastrados
+		  if (jogadores.length < 6) {
+			alert('É necessário pelo menos 6 jogadores cadastrados para gerar times.');
+			return;
+		  }
+
+		  // Ordena jogadores por nível (do menor para o maior)
+		  jogadores.sort(function(a, b) {
+			return a.nivel - b.nivel;
+		  });
+		  var qtdTimes = parseInt(jogadores.length/6);
+			for (var i = 1; i <= qtdTimes; i++) {
+			var time = { nome: 'Time'+i, jogadores: [], mediaNivel: 0 };
+				for (var j = i-1; j < jogadores.length &&time.jogadores.length<6; j += qtdTimes) {
+					var jogador = jogadores[j];		
+					time.jogadores.push(jogador);
+					removerDaFila(jogador);
+					time.mediaNivel += parseInt(jogador.nivel);
+			  }
+				
+			
+			localStorage.setItem('time'+i, JSON.stringify(time));
+		  }
+			// Verifica se sobrou alguém na fila
+			localStorage.setItem('prioridade', JSON.stringify(JSON.parse(localStorage.getItem('fila'))));
+			  
+		 // Atualiza lista de times
+		  atualizarTimes();
+		}
+
+
+		function atualizarTimes() {
+			var listaTimes = document.getElementById('lista-times');
+			listaTimes.innerHTML = '';
+			var n = 1;
+
+			while (JSON.parse(localStorage.getItem('time' + n))) {
+				var time1 = JSON.parse(localStorage.getItem('time' + n)) || {
+				nome: 'Time 1',
+				jogadores: [],
+				mediaNivel: 0
+				};
+				var table = document.createElement('table');
+				var trTime = document.createElement('tr');
+				var thNomeTime = document.createElement('th');
+				table.appendChild(trTime);
+				table.id = time1.jogadores[0].nome +time1.jogadores[2].nome +time1.jogadores[4].nome + time1.mediaNivel;
+
+
+				var trJogadores = document.createElement('tr');
+				var thJogadores = document.createElement('th');
+				thJogadores.innerHTML = 'Jogadores  <button onclick="voltaPraFila(this.parentNode.parentNode.parentNode.id)">Voltar Jogadores para Fila</button>';
+				var thNivel = document.createElement('th');
+				thNivel.innerHTML = 'Nível';
+				trJogadores.appendChild(thJogadores);
+				trJogadores.appendChild(thNivel);
+				table.appendChild(trJogadores);
+
+				time1.jogadores.forEach(function(jogador) {
+				  var trJogador = document.createElement('tr');
+				  var tdNomeJogador = document.createElement('td');
+				  tdNomeJogador.innerHTML = jogador.nome;
+				  var tdNivelJogador = document.createElement('td');
+				  tdNivelJogador.innerHTML = jogador.nivel;
+				  trJogador.appendChild(tdNomeJogador);
+				  trJogador.appendChild(tdNivelJogador);
+				  table.appendChild(trJogador);
+				});
+
+				listaTimes.appendChild(table);
+				n++;
+			}
+		}
+
+		function gerarHtmlEquipe(jogadores) {
+		  var html = '<ul>';
+		  jogadores.forEach(function(jogador) {
+			html += '<li>' + jogador.nome + ' - ' + jogador.nivel + '</li>';
+		  });
+		  html += '</ul>';
+		  return html;
+		}
+		async function CaregarMock(){
+			let jogadoresM = Mock.map((e)=>{return({ nome: e.nome, nivel: e.notaResumo })});
+			localStorage.setItem('jogadores', JSON.stringify(jogadoresM));
+
+
+			atualizarListaJogadores();
+		}
+
+
+		// Chama a função de atualização de jogadores ao carregar a página
+		atualizarListaJogadores();
+		atualizarFilaEspera();
+		var Mock = [
+  {
+    "ID":1,
+    "nome":"Éder",
+    "sexoFeminino":false,
+    "notaResumo":8,
+    "notaSaque":null,
+    "notaRecepcao":null,
+    "notaLevantamento":null,
+    "notaAtaque":null,
+    "notaBloqueio":null
+  },
+  {
+    "ID":2,
+    "nome":"Alemão",
+    "sexoFeminino":false,
+    "notaResumo":8,
+    "notaSaque":null,
+    "notaRecepcao":null,
+    "notaLevantamento":null,
+    "notaAtaque":null,
+    "notaBloqueio":null
+  
+  },
+  {
+    "ID":3,
+    "nome":"Misael",
+    "sexoFeminino":false,
+    "notaResumo":8,
+    "notaSaque":null,
+    "notaRecepcao":null,
+    "notaLevantamento":null,
+    "notaAtaque":null,
+    "notaBloqueio":null
+  
+  },
+  {
+    "ID":4,
+    "nome":"Marcello",
+    "sexoFeminino":false,
+    "notaResumo":8,
+    "notaSaque":null,
+    "notaRecepcao":null,
+    "notaLevantamento":null,
+    "notaAtaque":null,
+    "notaBloqueio":null
+  
+  },
+  {
+    "ID":5,
+    "nome":"Nilson",
+    "sexoFeminino":false,
+    "notaResumo":8,
+    "notaSaque":null,
+    "notaRecepcao":null,
+    "notaLevantamento":null,
+    "notaAtaque":null,
+    "notaBloqueio":null
+  
+  },
+  {
+    "ID":6,
+    "nome":"Thiago",
+    "sexoFeminino":false,
+    "notaResumo":8,
+    "notaSaque":null,
+    "notaRecepcao":null,
+    "notaLevantamento":null,
+    "notaAtaque":null,
+    "notaBloqueio":null
+  
+  },
+  {
+    "ID":7,
+    "nome":"Gui",
+    "sexoFeminino":false,
+    "notaResumo":8,
+    "notaSaque":null,
+    "notaRecepcao":null,
+    "notaLevantamento":null,
+    "notaAtaque":null,
+    "notaBloqueio":null
+  
+  },
+  {
+    "ID":8,
+    "nome":"Duda",
+    "sexoFeminino":true,
+    "notaResumo":8,
+    "notaSaque":null,
+    "notaRecepcao":null,
+    "notaLevantamento":null,
+    "notaAtaque":null,
+    "notaBloqueio":null
+  
+  },
+  {
+    "ID":9,
+    "nome":"Estevão",
+    "sexoFeminino":false,
+    "notaResumo":6,
+    "notaSaque":null,
+    "notaRecepcao":null,
+    "notaLevantamento":null,
+    "notaAtaque":null,
+    "notaBloqueio":null
+  
+  },
+  {
+    "ID":10,
+    "nome":"Henrique",
+    "sexoFeminino":false,
+    "notaResumo":6,
+    "notaSaque":null,
+    "notaRecepcao":null,
+    "notaLevantamento":null,
+    "notaAtaque":null,
+    "notaBloqueio":null
+  
+  },
+  {
+    "ID":11,
+    "nome":"Mari",
+    "sexoFeminino":true,
+    "notaResumo":6,
+    "notaSaque":null,
+    "notaRecepcao":null,
+    "notaLevantamento":null,
+    "notaAtaque":null,
+    "notaBloqueio":null
+  
+  },
+  {
+    "ID":12,
+    "nome":"Thay",
+    "sexoFeminino":true,
+    "notaResumo":6,
+    "notaSaque":null,
+    "notaRecepcao":null,
+    "notaLevantamento":null,
+    "notaAtaque":null,
+    "notaBloqueio":null
+  
+  },
+  {
+    "ID":13,
+    "nome":"Sara",
+    "sexoFeminino":true,
+    "notaResumo":6,
+    "notaSaque":null,
+    "notaRecepcao":null,
+    "notaLevantamento":null,
+    "notaAtaque":null,
+    "notaBloqueio":null
+  
+  },
+  {
+    "ID":14,
+    "nome":"Manoel",
+    "sexoFeminino":false,
+    "notaResumo":6,
+    "notaSaque":null,
+    "notaRecepcao":null,
+    "notaLevantamento":null,
+    "notaAtaque":null,
+    "notaBloqueio":null
+  
+  },
+  {
+    "ID":15,
+    "nome":"Ismael",
+    "sexoFeminino":false,
+    "notaResumo":6,
+    "notaSaque":null,
+    "notaRecepcao":null,
+    "notaLevantamento":null,
+    "notaAtaque":null,
+    "notaBloqueio":null
+  
+  },
+  {
+    "ID":16,
+    "nome":"Carlos Bill",
+    "sexoFeminino":false,
+    "notaResumo":6,
+    "notaSaque":null,
+    "notaRecepcao":null,
+    "notaLevantamento":null,
+    "notaAtaque":null,
+    "notaBloqueio":null
+  
+  },
+  {
+    "ID":17,
+    "nome":"Eduardo",
+    "sexoFeminino":false,
+    "notaResumo":6,
+    "notaSaque":null,
+    "notaRecepcao":null,
+    "notaLevantamento":null,
+    "notaAtaque":null,
+    "notaBloqueio":null
+  
+  },
+  {
+    "ID":18,
+    "nome":"Andrielli",
+    "sexoFeminino":true,
+    "notaResumo":6,
+    "notaSaque":null,
+    "notaRecepcao":null,
+    "notaLevantamento":null,
+    "notaAtaque":null,
+    "notaBloqueio":null
+  
+  },
+  {
+    "ID":19,
+    "nome":"Náthaly",
+    "sexoFeminino":true,
+    "notaResumo":6,
+    "notaSaque":null,
+    "notaRecepcao":null,
+    "notaLevantamento":null,
+    "notaAtaque":null,
+    "notaBloqueio":null
+  
+  },  {
+    "ID":20,
+    "nome":"Mateus",
+    "sexoFeminino":false,
+    "notaResumo":6,
+    "notaSaque":null,
+    "notaRecepcao":null,
+    "notaLevantamento":null,
+    "notaAtaque":null,
+    "notaBloqueio":null
+  
+  },
+  {
+    "ID":21,
+    "nome":"Igor",
+    "sexoFeminino":false,
+    "notaResumo":6,
+    "notaSaque":null,
+    "notaRecepcao":null,
+    "notaLevantamento":null,
+    "notaAtaque":null,
+    "notaBloqueio":null
+  
+  },
+  {
+    "ID":22,
+    "nome":"Isac",
+    "sexoFeminino":false,
+    "notaResumo":6,
+    "notaSaque":null,
+    "notaRecepcao":null,
+    "notaLevantamento":null,
+    "notaAtaque":null,
+    "notaBloqueio":null
+  
+  },
+  {
+    "ID":23,
+    "nome":"Marcela",
+    "sexoFeminino":true,
+    "notaResumo":4,
+    "notaSaque":null,
+    "notaRecepcao":null,
+    "notaLevantamento":null,
+    "notaAtaque":null,
+    "notaBloqueio":null
+  
+  },
+  {
+    "ID":24,
+    "nome":"Lucas Guedes",
+    "sexoFeminino":false,
+    "notaResumo":4,
+    "notaSaque":null,
+    "notaRecepcao":null,
+    "notaLevantamento":null,
+    "notaAtaque":null,
+    "notaBloqueio":null
+  },
+  {
+    "ID":25,
+    "nome":"Darlon",
+    "sexoFeminino":false,
+    "notaResumo":4,
+    "notaSaque":null,
+    "notaRecepcao":null,
+    "notaLevantamento":null,
+    "notaAtaque":null,
+    "notaBloqueio":null
+  },
+  {
+    "ID":26,
+    "nome":"Carlos Cruz",
+    "sexoFeminino":false,
+    "notaResumo":4,
+    "notaSaque":null,
+    "notaRecepcao":null,
+    "notaLevantamento":null,
+    "notaAtaque":null,
+    "notaBloqueio":null
+  },
+  {
+    "ID":27,
+    "nome":"Hayane",
+    "sexoFeminino":true,
+    "notaResumo":4,
+    "notaSaque":null,
+    "notaRecepcao":null,
+    "notaLevantamento":null,
+    "notaAtaque":null,
+    "notaBloqueio":null
+  },
+  {
+    "ID":28,
+    "nome":"Daiane",
+    "sexoFeminino":true,
+    "notaResumo":4,
+    "notaSaque":null,
+    "notaRecepcao":null,
+    "notaLevantamento":null,
+    "notaAtaque":null,
+    "notaBloqueio":null
+  },
+  {
+    "ID":29,
+    "nome":"Ana Paula Morais",
+    "sexoFeminino":true,
+    "notaResumo":4,
+    "notaSaque":null,
+    "notaRecepcao":null,
+    "notaLevantamento":null,
+    "notaAtaque":null,
+    "notaBloqueio":null
+  },
+  {
+    "ID":30,
+    "nome":"Damaris",
+    "sexoFeminino":true,
+    "notaResumo":4,
+    "notaSaque":null,
+    "notaRecepcao":null,
+    "notaLevantamento":null,
+    "notaAtaque":null,
+    "notaBloqueio":null
+  },
+  {
+    "ID":31,
+    "nome":"Roberta Miranda",
+    "sexoFeminino":true,
+    "notaResumo":4,
+    "notaSaque":null,
+    "notaRecepcao":null,
+    "notaLevantamento":null,
+    "notaAtaque":null,
+    "notaBloqueio":null
+  },
+  {
+    "ID":32,
+    "nome":"Roberta Misa",
+    "sexoFeminino":true,
+    "notaResumo":4,
+    "notaSaque":null,
+    "notaRecepcao":null,
+    "notaLevantamento":null,
+    "notaAtaque":null,
+    "notaBloqueio":null
+  },
+  {
+    "ID":33,
+    "nome":"Tâmara",
+    "sexoFeminino":true,
+    "notaResumo":4,
+    "notaSaque":null,
+    "notaRecepcao":null,
+    "notaLevantamento":null,
+    "notaAtaque":null,
+    "notaBloqueio":null
+  },
+  {
+    "ID":34,
+    "nome":"Maise",
+    "sexoFeminino":true,
+    "notaResumo":4,
+    "notaSaque":null,
+    "notaRecepcao":null,
+    "notaLevantamento":null,
+    "notaAtaque":null,
+    "notaBloqueio":null
+  },
+  {
+    "ID":35,
+    "nome":"Clarissa",
+    "sexoFeminino":true,
+    "notaResumo":2,
+    "notaSaque":null,
+    "notaRecepcao":null,
+    "notaLevantamento":null,
+    "notaAtaque":null,
+    "notaBloqueio":null
+  },
+  {
+    "ID":36,
+    "nome":"Manu",
+    "sexoFeminino":true,
+    "notaResumo":2,
+    "notaSaque":null,
+    "notaRecepcao":null,
+    "notaLevantamento":null,
+    "notaAtaque":null,
+    "notaBloqueio":null
+  },
+  {
+    "ID":37,
+    "nome":"Gabi Coimbra",
+    "sexoFeminino":true,
+    "notaResumo":2,
+    "notaSaque":null,
+    "notaRecepcao":null,
+    "notaLevantamento":null,
+    "notaAtaque":null,
+    "notaBloqueio":null
+  },
+  {
+    "ID":38,
+    "nome":"Elizana",
+    "sexoFeminino":true,
+    "notaResumo":2,
+    "notaSaque":null,
+    "notaRecepcao":null,
+    "notaLevantamento":null,
+    "notaAtaque":null,
+    "notaBloqueio":null
+  },
+  {
+    "ID":39,
+    "nome":"Pedro",
+    "sexoFeminino":false,
+    "notaResumo":2,
+    "notaSaque":null,
+    "notaRecepcao":null,
+    "notaLevantamento":null,
+    "notaAtaque":null,
+    "notaBloqueio":null
+  }
+]
+	</script>
+</body>
+</html>
